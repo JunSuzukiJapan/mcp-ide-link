@@ -108,6 +108,24 @@ export class McpServerManager {
                             },
                             required: ['filePath', 'line', 'character', 'newName']
                         }
+                    },
+                    {
+                        name: 'get_active_editors',
+                        description: 'Get the list of currently visible text editors (tabs) in VS Code, including the currently active one.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                            required: []
+                        }
+                    },
+                    {
+                        name: 'get_cursor_position',
+                        description: 'Get the absolute file path, cursor position (line and character), and selected text of the currently active editor.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                            required: []
+                        }
                     }
                 ]
             };
@@ -137,8 +155,8 @@ export class McpServerManager {
                     edit.replace(uri, range, replacement);
 
                     const success = await vscode.workspace.applyEdit(edit);
-                    // Open the file in the editor so the user sees the dirty state
-                    await vscode.window.showTextDocument(document);
+                    // Open the file in the editor so the user sees the dirty state, but preserve focus
+                    await vscode.window.showTextDocument(document, { preview: false, preserveFocus: true });
 
                     if (success) {
                         return { content: [{ type: 'text', text: `Successfully applied edit to ${filePath}. The file is now dirty (unsaved). Please review the changes in VS Code.` }] };
@@ -179,6 +197,46 @@ export class McpServerManager {
                     }
                 } catch (err: any) {
                     return { content: [{ type: 'text', text: `Error executing rename: ${err.message}` }], isError: true };
+                }
+            } else if (request.params.name === 'get_active_editors') {
+                try {
+                    const activeEditor = vscode.window.activeTextEditor;
+                    const visibleEditors = vscode.window.visibleTextEditors;
+
+                    const activePath = activeEditor ? activeEditor.document.uri.fsPath : null;
+                    const visiblePaths = visibleEditors.map(editor => editor.document.uri.fsPath);
+
+                    const resultInfo = {
+                        activeEditor: activePath,
+                        visibleEditors: visiblePaths
+                    };
+
+                    return { content: [{ type: 'text', text: JSON.stringify(resultInfo, null, 2) }] };
+                } catch (err: any) {
+                    return { content: [{ type: 'text', text: `Error getting active editors: ${err.message}` }], isError: true };
+                }
+            } else if (request.params.name === 'get_cursor_position') {
+                try {
+                    const activeEditor = vscode.window.activeTextEditor;
+                    if (!activeEditor) {
+                        return { content: [{ type: 'text', text: `No active text editor found.` }], isError: true };
+                    }
+
+                    const position = activeEditor.selection.active;
+                    const selectionText = activeEditor.document.getText(activeEditor.selection);
+
+                    const resultInfo = {
+                        filePath: activeEditor.document.uri.fsPath,
+                        cursor: {
+                            line: position.line,
+                            character: position.character
+                        },
+                        selectedText: selectionText || null
+                    };
+
+                    return { content: [{ type: 'text', text: JSON.stringify(resultInfo, null, 2) }] };
+                } catch (err: any) {
+                    return { content: [{ type: 'text', text: `Error getting cursor position: ${err.message}` }], isError: true };
                 }
             }
 
