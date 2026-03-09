@@ -15,23 +15,23 @@ AIが「ユーザーが今どこを見て作業しているか」を把握でき
 ## フェーズ 2: 状態管理とクリーンアップ（安全性向上）
 AI自身がファイルをどう扱うかコントロールできるようにする機能群です。
 
-- [ ] `save_all_dirty_files` の実装
+- [x] `save_all_dirty_files` の実装
   - **内容**: `apply_workspace_edit` 等で未保存状態（Dirty）になっているファイル群を一括で保存する
   - **VS Code API**: `vscode.workspace.saveAll()`
-- [ ] `close_active_editor` / `close_all_editors` の実装
+- [x] `close_active_editor` / `close_all_editors` の実装
   - **内容**: AIが調査のために開いたファイルを閉じる（現在のタブ、もしくはすべて）
   - **VS Code API**: `vscode.commands.executeCommand('workbench.action.closeActiveEditor')` 等
 
 ## フェーズ 3: LSP（言語サーバー）連携（高度・強力な機能）
 通常のCLIファイル操作では実現できない、IDEならではの言語解析機能群です。
 
-- [ ] `find_references` (すべての参照) の実装
+- [x] `find_references` (すべての参照) の実装
   - **内容**: 特定のシンボル（関数・クラス名など）がコードベースのどこで使用されているかを検索する
   - **VS Code API**: `vscode.commands.executeCommand('vscode.executeReferenceProvider', uri, position)`
-- [ ] `go_to_definition` (定義元ジャンプ) の実装
+- [x] `go_to_definition` (定義元ジャンプ) の実装
   - **内容**: 未知の関数や変数の定義元ファイルのパスと位置（行番号）を取得する
   - **VS Code API**: `vscode.commands.executeCommand('vscode.executeDefinitionProvider', uri, position)`
-- [ ] `get_diagnostics` (問題パネルの取得) の実装
+- [x] `get_diagnostics` (問題パネルの取得) の実装
   - **内容**: 開いているファイルで発生しているエラーや警告（赤い波線など）のリストを取得する
   - **VS Code API**: `vscode.languages.getDiagnostics(uri)`
 

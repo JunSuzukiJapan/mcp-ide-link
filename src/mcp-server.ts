@@ -126,6 +126,53 @@ export class McpServerManager {
                             properties: {},
                             required: []
                         }
+                    },
+                    {
+                        name: 'save_all_dirty_files',
+                        description: 'Save all dirty (unsaved) files in the workspace.',
+                        inputSchema: { type: 'object', properties: {}, required: [] }
+                    },
+                    {
+                        name: 'close_all_editors',
+                        description: 'Close all open active editors / tabs in the window.',
+                        inputSchema: { type: 'object', properties: {}, required: [] }
+                    },
+                    {
+                        name: 'find_references',
+                        description: 'Find all references for a symbol at a given position.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                filePath: { type: 'string', description: 'Absolute path of the file' },
+                                line: { type: 'number', description: '0-based line number' },
+                                character: { type: 'number', description: '0-based character offset' }
+                            },
+                            required: ['filePath', 'line', 'character']
+                        }
+                    },
+                    {
+                        name: 'go_to_definition',
+                        description: 'Find the definition for a symbol at a given position.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                filePath: { type: 'string', description: 'Absolute path of the file' },
+                                line: { type: 'number', description: '0-based line number' },
+                                character: { type: 'number', description: '0-based character offset' }
+                            },
+                            required: ['filePath', 'line', 'character']
+                        }
+                    },
+                    {
+                        name: 'get_diagnostics',
+                        description: 'Get all diagnostics (errors, warnings) for the given file or all open files if not specified.',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {
+                                filePath: { type: 'string', description: 'Optional absolute path of the file to get diagnostics for' }
+                            },
+                            required: []
+                        }
                     }
                 ]
             };
@@ -237,6 +284,104 @@ export class McpServerManager {
                     return { content: [{ type: 'text', text: JSON.stringify(resultInfo, null, 2) }] };
                 } catch (err: any) {
                     return { content: [{ type: 'text', text: `Error getting cursor position: ${err.message}` }], isError: true };
+                }
+            } else if (request.params.name === 'save_all_dirty_files') {
+                try {
+                    const success = await vscode.workspace.saveAll();
+                    return { content: [{ type: 'text', text: JSON.stringify({ saved: success }, null, 2) }] };
+                } catch (err: any) {
+                    return { content: [{ type: 'text', text: `Error saving files: ${err.message}` }], isError: true };
+                }
+            } else if (request.params.name === 'close_all_editors') {
+                try {
+                    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+                    return { content: [{ type: 'text', text: JSON.stringify({ closed: true }, null, 2) }] };
+                } catch (err: any) {
+                    return { content: [{ type: 'text', text: `Error closing editors: ${err.message}` }], isError: true };
+                }
+            } else if (request.params.name === 'find_references') {
+                const { filePath, line, character } = request.params.arguments as any;
+                try {
+                    const uri = vscode.Uri.file(filePath);
+                    const position = new vscode.Position(line, character);
+                    const locations = await vscode.commands.executeCommand<vscode.Location[]>(
+                        'vscode.executeReferenceProvider',
+                        uri,
+                        position
+                    );
+
+                    const result = (locations || []).map(loc => ({
+                        file: loc.uri.fsPath,
+                        startLine: loc.range.start.line,
+                        startChar: loc.range.start.character,
+                        endLine: loc.range.end.line,
+                        endChar: loc.range.end.character
+                    }));
+                    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+                } catch (err: any) {
+                    return { content: [{ type: 'text', text: `Error finding references: ${err.message}` }], isError: true };
+                }
+            } else if (request.params.name === 'go_to_definition') {
+                const { filePath, line, character } = request.params.arguments as any;
+                try {
+                    const uri = vscode.Uri.file(filePath);
+                    const position = new vscode.Position(line, character);
+                    const definitions = await vscode.commands.executeCommand<vscode.Location[]>(
+                        'vscode.executeDefinitionProvider',
+                        uri,
+                        position
+                    );
+
+                    const result = (definitions || []).map(loc => ({
+                        file: loc.uri.fsPath,
+                        startLine: loc.range.start.line,
+                        startChar: loc.range.start.character,
+                        endLine: loc.range.end.line,
+                        endChar: loc.range.end.character
+                    }));
+                    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+                } catch (err: any) {
+                    return { content: [{ type: 'text', text: `Error finding definition: ${err.message}` }], isError: true };
+                }
+            } else if (request.params.name === 'get_diagnostics') {
+                const { filePath } = request.params.arguments as any || {};
+                try {
+                    const uri = filePath ? vscode.Uri.file(filePath) : undefined;
+                    let result: any[] = [];
+
+                    if (uri) {
+                        const diags = vscode.languages.getDiagnostics(uri);
+                        if (diags.length > 0) {
+                            result.push({
+                                file: uri.fsPath,
+                                diagnostics: diags.map(d => ({
+                                    message: d.message,
+                                    severity: d.severity,
+                                    source: d.source,
+                                    code: typeof d.code === 'object' ? d.code.value : d.code,
+                                    line: d.range.start.line,
+                                    character: d.range.start.character
+                                }))
+                            });
+                        }
+                    } else {
+                        const allDiags = vscode.languages.getDiagnostics();
+                        result = allDiags.filter(([u, diags]) => diags.length > 0).map(([u, diags]) => ({
+                            file: u.fsPath,
+                            diagnostics: diags.map(d => ({
+                                message: d.message,
+                                severity: d.severity,
+                                source: d.source,
+                                code: typeof d.code === 'object' ? d.code.value : d.code,
+                                line: d.range.start.line,
+                                character: d.range.start.character
+                            }))
+                        }));
+                    }
+
+                    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+                } catch (err: any) {
+                    return { content: [{ type: 'text', text: `Error getting diagnostics: ${err.message}` }], isError: true };
                 }
             }
 
