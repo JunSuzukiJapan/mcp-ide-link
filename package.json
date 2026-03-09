@@ -4,6 +4,10 @@
   "description": "Exposes IDE features (WorkspaceEdit, Rename) via Model Context Protocol (MCP) to AI coding agents.",
   "version": "0.0.1",
   "publisher": "junsuzuki",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JunSuzukiJapan/mcp-ide-link.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
