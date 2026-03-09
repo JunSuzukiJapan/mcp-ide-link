@@ -62,7 +62,7 @@ export class McpServerManager {
             return {
                 tools: [
                     {
-                        name: 'apply_workspace_edit',
+                        name: 'replace_text',
                         description: 'Apply a workspace edit to a specific file. This replaces a target string with a replacement string. The edit remains unsaved so that the user can review and undo it.',
                         inputSchema: {
                             type: 'object',
@@ -179,7 +179,7 @@ export class McpServerManager {
         });
 
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-            if (request.params.name === 'apply_workspace_edit') {
+            if (request.params.name === 'replace_text') {
                 const { filePath, target, replacement } = request.params.arguments as any;
                 try {
                     const uri = vscode.Uri.file(filePath);

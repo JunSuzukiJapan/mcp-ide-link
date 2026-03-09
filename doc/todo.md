@@ -16,7 +16,7 @@ AIが「ユーザーが今どこを見て作業しているか」を把握でき
 AI自身がファイルをどう扱うかコントロールできるようにする機能群です。
 
 - [x] `save_all_dirty_files` の実装
-  - **内容**: `apply_workspace_edit` 等で未保存状態（Dirty）になっているファイル群を一括で保存する
+  - **内容**: `replace_text` 等で未保存状態（Dirty）になっているファイル群を一括で保存する
   - **VS Code API**: `vscode.workspace.saveAll()`
 - [x] `close_active_editor` / `close_all_editors` の実装
   - **内容**: AIが調査のために開いたファイルを閉じる（現在のタブ、もしくはすべて）
