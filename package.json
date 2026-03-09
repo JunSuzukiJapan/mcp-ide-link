@@ -1,0 +1,42 @@
+{
+  "name": "mcp-ide-link",
+  "displayName": "MCP IDE Link",
+  "description": "Exposes IDE features (WorkspaceEdit, Rename) via Model Context Protocol (MCP) to AI coding agents.",
+  "version": "0.0.1",
+  "publisher": "junsuzuki",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mcpIdeLink.restartServer",
+        "title": "MCP IDE Link: Restart Server"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.1",
+    "@types/express": "^5.0.6",
+    "express": "^5.2.1"
+  }
+}
